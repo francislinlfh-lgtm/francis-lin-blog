@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin — Francis Lin</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+</head>
+<body style="display:none">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ── SIGN-IN VIEW (shown when logged out) ─────────────────────── -->
+  <div id="signin-view" style="display:none;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
+    <div style="max-width:360px;width:100%;text-align:center;">
+      <div style="font-family:'EB Garamond',Georgia,serif;font-size:34px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px;">Francis Lin</div>
+      <div style="font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#9ca3af;margin-bottom:32px;">Blog Admin</div>
+      <button class="btn btn-primary" id="google-signin-btn" style="width:100%;justify-content:center;padding:12px;">Sign in with Google</button>
+      <p id="signin-msg" style="font-size:13px;color:#c0392b;margin-top:16px;min-height:18px;"></p>
+    </div>
+  </div>
+
+  <!-- ── ADMIN SHELL (shown when authorized) ──────────────────────── -->
+  <div id="admin-shell" style="display:none;">
+
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-name">Francis Lin</div>
+        <div class="sidebar-brand-sub">Blog Admin</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-tab="dashboard">Dashboard</div>
+        <div class="nav-item" data-tab="articles">Posts</div>
+        <div class="nav-item" data-tab="editor">New Post</div>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="sidebar-user-email" id="sidebar-email"></div>
+        <a href="index.html" target="_blank" style="display:block;font-size:11px;color:rgba(255,255,255,0.45);text-decoration:none;margin-bottom:8px;letter-spacing:0.02em;">↗ View blog</a>
+        <button class="btn-signout" id="signout-btn">Sign Out</button>
+      </div>
+    </aside>
+
+    <main id="main-content" class="admin-content">
+
+      <!-- DASHBOARD -->
+      <div class="tab-panel active" id="tab-dashboard">
+        <div class="panel-header">
+          <h1>Dashboard</h1>
+          <button class="btn btn-secondary" id="refresh-dashboard-btn">↻ Refresh</button>
+        </div>
+        <div id="dashboard-stats" class="dashboard-stats-grid">
+          <div class="stat-card"><div class="stat-label">Published</div><div class="stat-value" id="stat-published">—</div></div>
+          <div class="stat-card"><div class="stat-label">Drafts</div><div class="stat-value" id="stat-drafts">—</div></div>
+          <div class="stat-card"><div class="stat-label">Total Views</div><div class="stat-value" id="stat-views">—</div></div>
+        </div>
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#6b7280;margin-bottom:16px;">Recent Posts</div>
+          <div id="dashboard-recent"><p style="color:#999;font-size:13px;">Loading…</p></div>
+        </div>
+      </div>
+
+      <!-- POSTS -->
+      <div class="tab-panel" id="tab-articles">
+        <div class="panel-header">
+          <h1>Posts</h1>
+          <button class="btn btn-primary" id="new-article-btn">+ New Post</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th id="th-date-sort" style="cursor:pointer;user-select:none;" title="Sort by date">Date</th>
+                <th id="th-views-sort" style="cursor:pointer;user-select:none;text-align:right;" title="Sort by views">Views</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="articles-tbody">
+              <tr><td colspan="5" style="text-align:center;color:#999;padding:24px;">
+                <span class="spinner"></span> Loading posts…
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EDITOR -->
+      <div class="tab-panel" id="tab-editor">
+        <div class="panel-header">
+          <h1 id="editor-heading">New Post</h1>
+          <button class="btn btn-secondary" id="editor-cancel-btn">← Back to Posts</button>
+        </div>
+        <div class="card">
+          <form id="article-form" onsubmit="return false;">
+            <input type="hidden" id="edit-article-id" value="" />
+
+            <div class="form-group">
+              <label for="f-title">Title *</label>
+              <input type="text" id="f-title" placeholder="Post title" required />
+            </div>
+
+            <div class="form-group">
+              <label for="f-standfirst">Summary</label>
+              <textarea id="f-standfirst" rows="2" placeholder="One or two sentences shown under the title on the home page…"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-image">Cover Image</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="url" id="f-image" placeholder="Paste an image URL, or upload →" style="flex:1;" />
+                  <button type="button" class="btn btn-secondary" id="cover-upload-btn" style="white-space:nowrap;">⬆ Upload</button>
+                  <input type="file" id="cover-file" accept="image/*" style="display:none;" />
+                </div>
+                <div id="cover-upload-status" style="display:none;font-size:12px;color:var(--text-muted);margin-top:6px;"></div>
+                <div id="image-preview-wrap" style="display:none;margin-top:8px;">
+                  <img id="image-preview" src="" alt="Cover preview" style="max-width:320px;border-radius:4px;" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="f-image-caption">Image Caption</label>
+                <input type="text" id="f-image-caption" placeholder="Optional caption or credit…" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-scheduled-at">Scheduled Publish Date / Time</label>
+                <input type="datetime-local" id="f-scheduled-at" />
+                <small style="color:var(--text-muted);display:block;margin-top:4px;">Leave blank to publish immediately. When set, the post auto-publishes at this time.</small>
+              </div>
+              <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:4px;">
+                <div class="form-check">
+                  <input type="checkbox" id="f-published" />
+                  <label for="f-published">Published</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Body</label>
+              <div id="editor-container"></div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" id="save-draft-btn">Save Draft</button>
+              <button type="button" class="btn btn-secondary" id="preview-btn">Save &amp; Preview ↗</button>
+              <button type="button" class="btn btn-primary" id="publish-btn">Publish</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js?v=2"></script>
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <script src="admin.js?v=2"></script>
+</body>
+</html>
