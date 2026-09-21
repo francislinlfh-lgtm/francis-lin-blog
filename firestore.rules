@@ -2,32 +2,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/adminEmails/$(request.auth.token.email));
-    }
-
-    // Anonymous readers may bump a published post's view counter by exactly 1;
-    // every other field change requires the owner.
-    function isViewsIncrementOnly() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
-        && request.resource.data.views == resource.data.views + 1;
-    }
-
-    // Blog posts.
-    match /articles/{id} {
-      allow read: if resource.data.published == true || isAdmin();
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin()
-        || (resource.data.published == true && isViewsIncrementOnly());
-    }
-
-    // Owner allow-list: a single-doc existence check is public (the admin page
-    // gates on it); enumerating the roster is owner-only.
-    match /adminEmails/{email} {
-      allow get:  if true;
-      allow list: if isAdmin();
-      allow write: if isAdmin();
+    // Anonymous per-post view counter. Each doc holds a single integer `count`.
+    // Anyone may read it and may only create it at 1 or bump it by exactly 1 —
+    // nothing else is writable, so it can't be abused for arbitrary data.
+    match /postViews/{id} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count is int
+        && (
+          (resource == null && request.resource.data.count == 1) ||
+          (resource != null && request.resource.data.count == resource.data.count + 1)
+        );
     }
   }
 }
